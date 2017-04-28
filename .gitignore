@@ -33,4 +33,4 @@ vignettes/*.pdf
 *.knit.md
 
 # MacOS annoying files
-.
+.DS_Store
