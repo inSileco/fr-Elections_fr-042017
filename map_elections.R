@@ -1,6 +1,7 @@
 library(htmlwidgets)
 library(htmltools)
 library(leaflet)
+library(rgdal)
 
 ## This is what I used to make the dataset ready
 # library(rgdal)
