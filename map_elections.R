@@ -41,6 +41,6 @@ map_elec <- leaflet(wrld_adm_gsimp) %>%
     labelOptions = labelOptions(
       style = list("font-weight" = "normal", padding = "3px 8px"),
       textsize = "15px", direction = "auto")
-      ) %>% addProviderTiles(providers$Esri.WorldImagery,options = providerTileOptions(minZoom=10, maxZoom=18))
+      ) %>% addProviderTiles(providers$Esri.WorldImagery)
 
 saveWidget(widget = map_elec, file = "./index.html")
