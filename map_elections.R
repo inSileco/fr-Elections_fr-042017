@@ -1,3 +1,4 @@
+cat("\n---- START ----\n")
 # Packages required
 library(magrittr)
 library(htmlwidgets)
@@ -14,10 +15,10 @@ df_score <-read.csv2("data/Tour_1_Resultats_par_pays_240417.csv",stringsAsFactor
 # I temporarly removed Kosovo as we do not have the boundaries... we could merge
 # the resuts with Serbie's ones... it may be a political issue though...
 # Same for Isrêl and Jerusalem
-df_score <- df_score[-c(74,78),]
+df_score <- df_score[-c(74,78), ]
 
-# extract % and rename candiates
-df_score <- df_score[,c(1:2,14:ncol(df_score))]
+# extract votes and rename candiates (better to use votes and calcule % afterwards)
+df_score <- df_score[, c(1:13)]
 names(df_score)[2:ncol(df_score)] <- c(
   "voteTot",
   "M. Nicolas DUPONT-AIGNAN",
@@ -32,17 +33,11 @@ names(df_score)[2:ncol(df_score)] <- c(
   "M. François ASSELINEAU",
   "M. François FILLON")
 
-# Convert % to numeric columns
-# KC: I wonder if we should rather use the number of votes... we can easily get the % and
-# we would be able to show the raw number of votes as you did on the first map
-df_score[, 3:ncol(df_score)] <- apply(df_score[, 3:ncol(df_score)], 1, gsub,pattern="%",replacement="")
-df_score[, 3:ncol(df_score)] <- apply(df_score[, 3:ncol(df_score)], 1, gsub,pattern=",",replacement=".")
-df_score[, 3:ncol(df_score)] <- apply(df_score[, 3:ncol(df_score)], 1, as.numeric)
+
 
 
 # Importing the shapefile
 wrld_adm <- readOGR(dsn="data", layer="worldsimple")
-
 
 ## RENAME some countries to ease the match...
 iso3c <- read.csv("./data/iso3-fr.csv", header=FALSE, stringsAsFactors=F)
@@ -63,21 +58,48 @@ wrld_df <- data.frame(
   Pays = as.character(wrld_adm@data$FRENCH),
   stringsAsFactors = FALSE
   )
-tmp <- merge(x =wrld_df, y = df_score[c('ISO3', 'voteTot')], by = "ISO3",
+tmp <- merge(x =wrld_df, y = df_score, by = "ISO3",
   all = TRUE, sort=TRUE)
 tmp <- tmp[rank(wrld_df$ISO3),]
-tmp$voteTot[is.na(tmp$voteTot)] <- 0
-##
+tmp[is.na(tmp)] <- 0
 wrld_adm@data <- tmp
-ls_labels <- sprintf(
-  "<strong>%s</strong><br/><hr> Nombre de votes: %d",
-  as.character(wrld_adm@data$ISO3), wrld_adm@data$voteTot) %>% lapply(htmltools::HTML)
 
-## Colors
-dfcol <- data.frame(
-    candidat = c("jlm", "lepen", "macron", "hamon", "fillon"), # "#23408f" bleu Fillon
-    couleur = c("#c9462c", "#232f70", "#bbbbbb", "#97c121", "#000000")
-)
+
+## LABELS
+nbc <- nrow(wrld_adm@data)
+ls_labels <- rep("", nbc)
+vec_pos <- rep(0, nbc)
+for (i in 1:nbc){
+  tot <- wrld_adm@data$voteTot[i]
+  ls_labels[i] %<>% paste0("<strong>", wrld_adm@data$Pays.x[i],
+  "</strong><br/><hr>")
+  if (tot) {
+    rk <- rank(tot-wrld_adm@data[i, 5:15], ties.method = "min")
+    rk2 <- rank(tot-wrld_adm@data[i, 5:15], ties.method = "random")
+    vec_pos[i] <- which(rk2 == 1)
+    ls_labels[i] %<>% paste0("Nombre de votes : ",  tot)
+    print(rk2)
+    for (j in 1:11){
+      id <- which(rk2==j)
+      vot <- wrld_adm@data[i, id+4]
+      pct <- round(100*vot/wrld_adm@data$voteTot[i], 2)
+      ls_labels[i] %<>% paste0(
+         "<br><strong>", j, ".</strong> ", names(wrld_adm@data)[id+4],
+         " : ", vot, " soit ", pct, "%"
+        )
+    }
+  }
+}
+
+ls_labels %<>% lapply(htmltools::HTML)
+
+
+## COLORS
+vec_col <- c("white", "#232f70", "#232f70", "#01b2fb",  "#97c121", "#c9462c", "#c9462c",
+  "#232f70", "#c9462c", "#c9462c", "#232f70", "#c9a00e")
+ls_col <- vec_col[vec_pos+1] %>% as.list
+
+
 
 cat("\n---- CREATING THE MAP ----\n")
 ##  Creating the Map using leaflet;
@@ -87,7 +109,7 @@ map_elec <- leaflet(wrld_adm) %>%
   addPolygons(
     weight = 2,
     opacity = 1,
-    color = "white",
+    color = ls_col,
     dashArray = "3",
     fillOpacity = 0.7,
     highlight = highlightOptions(
@@ -100,7 +122,10 @@ map_elec <- leaflet(wrld_adm) %>%
     labelOptions = labelOptions(
       style = list("font-weight" = "normal", padding = "3px 8px"),
       textsize = "15px", direction = "auto")
-      ) %>% addProviderTiles(providers$Esri.WorldImagery)
+      ) %>%
+      # addLegend(pal = as.list(dfcol$couleur), values = as.list(dfcol$candidat), opacity = 0.7, title = "Vote des Français établis à l'étrander",
+      # position = "bottomright") %>%
+    addProviderTiles(providers$Esri.WorldImagery)
 ##
 cat("\n---- SAVING THE MAP ----\n")
 saveWidget(widget = map_elec, file = "./index.html")

@@ -30,3 +30,5 @@ library(stringdist)
 - [ ] couleur pour le gagnant
 - [ ] détails des résultats
 - [ ] Faire la France?
+- [ ] on pourrait faire un score gauche/droite et un score système/anti-système
+- [ ] mettre des drapeaux !
