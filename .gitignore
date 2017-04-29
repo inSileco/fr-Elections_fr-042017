@@ -34,3 +34,4 @@ vignettes/*.pdf
 
 # MacOS annoying files
 .DS_Store
+raw/
