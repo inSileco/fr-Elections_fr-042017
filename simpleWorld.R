@@ -1,4 +1,4 @@
-#### How to get the shapefile we use for the map.
+#### How to get the shapefile we used for the map.
 ## Packages required
 library(rgdal)
 library(rgeos)
@@ -12,7 +12,7 @@ destfile="raw/gadm28.shp.zip")
 unzip("raw/gadm28.shp.zip", exdir="raw/")
 ## Importing the shapelfile downloaded (large file, so it takes a while)
 world <- readOGR(dsn="raw", layer="gadm28")
-## Simplify
+## Simplify NB: this takes some times and a lot of memory....
 wsimp <- gSimplify(world, tol=.06, topologyPreserve=T) %>% SpatialPolygonsDataFrame(data=world@data)
 ## writing the new shapefile (see ogrDrivers() for the name of the drivers)
 ## as ESRI Shapefile

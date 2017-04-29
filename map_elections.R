@@ -1,19 +1,25 @@
+# Packages required
+library(magrittr)
 library(htmlwidgets)
 library(htmltools)
 library(leaflet)
 library(countrycode)
 library(rgdal)
+library(stringdist)
 
 
-# Importing the dshapefile
-wrld_adm <- readOGR(dsn="data", layer="worldsimple")
-
-# Candidats
+# Importing the results
 df_score <-read.csv2("data/Tour_1_Resultats_par_pays_240417.csv",stringsAsFactors=FALSE)
 
+# I temporarly removed Kosovo as we do not have the boundaries... we could merge
+# the resuts with Serbie's ones... it may be a political issue though...
+# Same for Isrêl and Jerusalem
+df_score <- df_score[-c(74,78),]
+
 # extract % and rename candiates
-df_score <- df_score[,c(1,14:ncol(df_score))]
+df_score <- df_score[,c(1:2,14:ncol(df_score))]
 names(df_score)[2:ncol(df_score)] <- c(
+  "voteTot",
   "M. Nicolas DUPONT-AIGNAN",
   "Mme. Marine LE PEN",
   "M. Emmanuel MACRON",
@@ -27,31 +33,55 @@ names(df_score)[2:ncol(df_score)] <- c(
   "M. François FILLON")
 
 # Convert % to numeric columns
-df_score[,2:ncol(df_score)] <- apply(df_score[,2:ncol(df_score)],1,gsub,pattern="%",replacement="")
-df_score[,2:ncol(df_score)] <- apply(df_score[,2:ncol(df_score)],1,gsub,pattern=",",replacement=".")
-df_score[,2:ncol(df_score)] <- apply(df_score[,2:ncol(df_score)],1,as.numeric)
+# KC: I wonder if we should rather use the number of votes... we can easily get the % and
+# we would be able to show the raw number of votes as you did on the first map
+df_score[, 3:ncol(df_score)] <- apply(df_score[, 3:ncol(df_score)], 1, gsub,pattern="%",replacement="")
+df_score[, 3:ncol(df_score)] <- apply(df_score[, 3:ncol(df_score)], 1, gsub,pattern=",",replacement=".")
+df_score[, 3:ncol(df_score)] <- apply(df_score[, 3:ncol(df_score)], 1, as.numeric)
 
-# clean sp data.frame
-wrld_adm@data <- data.frame(Pays=wrld_adm@data$FRENCH)
 
-# merge with country base on iso3c
-iso3c <- read.csv("./data/iso3-fr.csv",header=FALSE)
-df_score$ISO3 <- ''
+# Importing the shapefile
+wrld_adm <- readOGR(dsn="data", layer="worldsimple")
+
+
+## RENAME some countries to ease the match...
+iso3c <- read.csv("./data/iso3-fr.csv", header=FALSE, stringsAsFactors=F)
+iso3c$V5[c(51, 58, 105, 106, 117, 125, 142, 182, 230)] <- c("CONGO", "TCHÈQUE",
+"IRAN", "IRAK", "CORÉE DU SUD", "LIBYE", "MOLDAVIE", "RUSSIE", "TANZANIE")
+##
+df_score$ISO3 <- ""
 for(r in 1:nrow(df_score)){
-  df_score$ISO3[r] <- as.character(iso3c[stringdist::amatch(df_score$Pays[r], iso3c$V4, maxDist=Inf),'V4'])
+  df_score$ISO3[r] <- as.character(iso3c[stringdist::amatch(df_score$Pays[r],
+    toupper(iso3c$V5), maxDist=20), 'V4'])
 }
-
-countrycode(tolower(df_score$Pays), 'country.name.fr','iso3c')
-
+##
+# length(unique(df_score$ISO3))
+# df_score[c('ISO3','Pays')]
+# wrld_adm@data
+wrld_df <- data.frame(
+  ISO3 = as.character(wrld_adm@data$ISO3),
+  Pays = as.character(wrld_adm@data$FRENCH),
+  stringsAsFactors = FALSE
+  )
+tmp <- merge(x =wrld_df, y = df_score[c('ISO3', 'voteTot')], by = "ISO3",
+  all = TRUE, sort=TRUE)
+tmp <- tmp[rank(wrld_df$ISO3),]
+tmp$voteTot[is.na(tmp$voteTot)] <- 0
+##
+wrld_adm@data <- tmp
 ls_labels <- sprintf(
-  "<strong>%s</strong>",
-  wrld_adm@data$ISO3) %>% lapply(htmltools::HTML)
+  "<strong>%s</strong><br/><hr> Nombre de votes: %d",
+  as.character(wrld_adm@data$ISO3), wrld_adm@data$voteTot) %>% lapply(htmltools::HTML)
 
-  countries_sp <- wrld_adm@data$FAO
+## Colors
+dfcol <- data.frame(
+    candidat = c("jlm", "lepen", "macron", "hamon", "fillon"), # "#23408f" bleu Fillon
+    couleur = c("#c9462c", "#232f70", "#bbbbbb", "#97c121", "#000000")
+)
 
-
+cat("\n---- CREATING THE MAP ----\n")
 ##  Creating the Map using leaflet;
-map_elec <- leaflet(wrld_adm_gsimp) %>%
+map_elec <- leaflet(wrld_adm) %>%
   setView(lng = 5, lat = 10, zoom = 3) %>%
   addTiles() %>%  # Add default OpenStreetMap map tiles
   addPolygons(
@@ -71,5 +101,6 @@ map_elec <- leaflet(wrld_adm_gsimp) %>%
       style = list("font-weight" = "normal", padding = "3px 8px"),
       textsize = "15px", direction = "auto")
       ) %>% addProviderTiles(providers$Esri.WorldImagery)
-
+##
+cat("\n---- SAVING THE MAP ----\n")
 saveWidget(widget = map_elec, file = "./index.html")
