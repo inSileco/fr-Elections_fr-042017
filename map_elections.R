@@ -14,12 +14,48 @@ library(rgeos)
 # writeOGR(wsimp, dsn="country_geojson", layer="world", driver="GeoJSON")
 
 wrld_adm <- readOGR(dsn="data/countries", layer="countries")
+
 # Candidats
-df_score <- read.csv2("data/Tour_1_Resultats_par_pays_240417.csv",
-encoding="Latin-1")
+df_score <-read.csv2("data/Tour_1_Resultats_par_pays_240417.csv",stringsAsFactors=FALSE)
+
+# extract % and rename candiates
+df_score <- df_score[,c(1,14:ncol(df_score))]
+names(df_score)[2:ncol(df_score)] <- c(
+"M. Nicolas DUPONT-AIGNAN",
+"Mme. Marine LE PEN",
+"M. Emmanuel MACRON",
+"M. Benoît HAMON",
+"Mme. Nathalie ARTHAUD",
+"M. Philippe POUTOU",
+"M. Jacques CHEMINADE",
+"M. Jean LASSALLE",
+"M. Jean Luc MÉLENCHON",
+"M. François ASSELINEAU",
+"M. François FILLON")
+
+# Convert % to numeric columns
+df_score[,2:ncol(df_score)] <- apply(df_score[,2:ncol(df_score)],1,gsub,pattern="%",replacement="")
+df_score[,2:ncol(df_score)] <- apply(df_score[,2:ncol(df_score)],1,gsub,pattern=",",replacement=".")
+df_score[,2:ncol(df_score)] <- apply(df_score[,2:ncol(df_score)],1,as.numeric)
+
+# clean sp data.frame
+wrld_adm@data <- data.frame(Pays=wrld_adm@data$FRENCH)
+
+# merge with country base on iso3c
+iso3c <- read.csv("./data/iso3-fr.csv",header=FALSE)
+df_score$ISO3 <- ''
+for(r in 1:nrow(df_score)){
+  df_score$ISO3[r] <- as.character(iso3c[stringdist::amatch(df_score$Pays[r], iso3c$V4, maxDist=Inf),'V4'])
+}
+
+countrycode(tolower(df_score$Pays), 'country.name.fr','iso3c')
+
 ls_labels <- sprintf(
   "<strong>%s</strong>",
   wrld_adm@data$ISO3) %>% lapply(htmltools::HTML)
+
+  countries_sp <- wrld_adm@data$FAO
+
 
 # Map
 map_elec <- leaflet(wrld_adm_gsimp) %>%
