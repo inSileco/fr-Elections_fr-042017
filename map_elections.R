@@ -117,27 +117,20 @@ map_elec <- leaflet(wrld_adm) %>%
   setView(lng = 5, lat = 10, zoom = 3) %>%
   addTiles() %>%  # Add default OpenStreetMap map tiles
   addPolygons(
-    weight = 2,
+    weight = 1,
     opacity = 1,
     color = ls_col,
-    dashArray = "3",
     fillOpacity = 0.7,
     highlight = highlightOptions(
-      weight = 3,
-      color = "#666",
+      weight = 1,
+      color = "#ffffff",
       dashArray = "",
       fillOpacity = 0.7,
       bringToFront = TRUE),
     label = ls_labels,
     labelOptions = labelOptions(
       style = list("font-weight" = "normal", padding = "3px 8px"),
-      textsize = "15px", direction = "auto")) %>%
-    addEasyButton(
-      easyButton(
-        icon="fa-github-square fa-2x", title="View source code",
-        onClick=JS("function(btn){window.location.href = 'https://github.com/letiR/Elections_fr-042017';}"),
-        position="topright")) %>%
-    addProviderTiles(providers$Esri.WorldImagery)
+      textsize = "15px", direction = "auto")) %>% addProviderTiles("Esri.WorldImagery")
 
 
 ##
