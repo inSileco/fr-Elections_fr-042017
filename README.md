@@ -1,7 +1,7 @@
 ## Elections_fr-042017
 Cartographie du vote des français de l'étranger - 1er Tour - 2017
 
-Carye réalisée avec Leaflet (appelé via R, voir les packages utilisés ci-dessous et la [documentation](https://rstudio.github.io/leaflet/)).
+Carte réalisée avec Leaflet (appelé via R, voir les packages utilisés ci-dessous et la [documentation](https://rstudio.github.io/leaflet/)).
 
 
 ## Disponibilités des données
@@ -26,9 +26,9 @@ library(stringdist)
 
 ## TODO
 
-- [ ] merger les résultats du Kosovo et d'ISRAËL
-- [ ] couleur pour le gagnant
-- [ ] détails des résultats
-- [ ] Faire la France?
-- [ ] on pourrait faire un score gauche/droite et un score système/anti-système
-- [ ] mettre des drapeaux !
+- [X] merger les résultats du Kosovo avec la Serbie;
+- [X] merger les résultats de Jérusalem avec Israël;
+- [X] couleur pour le gagnant;
+- [X] détails des résultats;
+- [ ] faire la France?;
+- [ ] on pourrait faire un score gauche/droite et un score système/anti-système.
