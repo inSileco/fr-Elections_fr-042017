@@ -31,4 +31,8 @@ library(stringdist)
 - [X] couleur pour le gagnant;
 - [X] détails des résultats;
 - [ ] faire la France?;
-- [ ] on pourrait faire un score gauche/droite et un score système/anti-système.
+- [ ] Inverser les couleurs entre le candidat macron et fillon (http://www.lemonde.fr/les-decodeurs/article/2017/04/26/presidentielle-les-francais-de-l-etranger-ont-vote-macron-a-40-au-premier-tour_5117947_4355770.html)
+- [ ] Ajouter une légende
+- [ ] Ajouter le titre
+- [ ] Ajouter les couches par candidats
+- [ ] on pourrait faire un score gauche/droite et un score système/anti-système (Je pense que ca forcerait l'interprétation (SV).)
